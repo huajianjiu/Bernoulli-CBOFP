@@ -187,14 +187,25 @@ void InitParaphraseTable() {
 void ReadParaphrase() {
   long long a, i = 0;
   char c;
-  char word[MAX_STRING];
+  char ppword[MAX_STRING];
+  char baseword[MAX_STRING];
+
   FILE *fin = fopen(ppdb_file, "rb")
   if (fin == NULL) {
     printf("Vocabulary file not found\n");
     exit(1);
   }
-
   InitParaphraseTable();
+  while (1) {
+    ReadWord(ppword, fin);
+    if (feof(fin)) break;
+    i++;
+    if (i>0 && i%2 == 0) {
+      paraphrases[SearchVocab(baseword)] = SearchVocab(ppword);
+    }else{
+      strcpy(baseword, ppword);
+    }
+  }
 }
 
 int main(int argc, char **argv)
@@ -212,7 +223,7 @@ int main(int argc, char **argv)
 	if ((i = ArgPos((char *)"-read-vocab", argc, argv)) > 0) strcpy(read_vocab_file, argv[i + 1]);
 	if ((i = ArgPos((char *)"-ppdb", argc, argv)) > 0) strcpy(ppdb_file, argv[i + 1]);
 	
-  vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word))
+  vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
   vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
 
   ReadVocab();
