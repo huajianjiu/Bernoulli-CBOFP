@@ -36,6 +36,58 @@ int hs = 0, negative = 5;
 const int table_size = 1e8;
 int *table;
 
+int *paraphrases;
+
+// Returns hash value of a word
+int GetWordHash(char *word) {
+  unsigned long long a, hash = 0;
+  for (a = 0; a < strlen(word); a++) hash = hash * 257 + word[a];
+  hash = hash % vocab_hash_size;
+  return hash;
+}
+
+// Returns position of a word in the vocabulary; if the word is not found, returns -1
+int SearchVocab(char *word) {
+  unsigned int hash = GetWordHash(word);
+  while (1) {
+    if (vocab_hash[hash] == -1) return -1;
+    if (!strcmp(word, vocab[vocab_hash[hash]].word)) return vocab_hash[hash];
+    hash = (hash + 1) % vocab_hash_size;
+  }
+  return -1;
+}
+
+// Reads a word and returns its index in the vocabulary
+int ReadWordIndex(FILE *fin) {
+  char word[MAX_STRING];
+  ReadWord(word, fin);
+  if (feof(fin)) return -1;
+  return SearchVocab(word);
+}
+
+// Reads a single word from a file, assuming space + tab + EOL to be word boundaries
+void ReadWord(char *word, FILE *fin) {
+  int a = 0, ch;
+  while (!feof(fin)) {
+    ch = fgetc(fin);
+    if (ch == 13) continue;
+    if ((ch == ' ') || (ch == '\t') || (ch == '\n')) {
+      if (a > 0) {
+        if (ch == '\n') ungetc(ch, fin);
+        break;
+      }
+      if (ch == '\n') {
+        strcpy(word, (char *)"</s>");
+        return;
+      } else continue;
+    }
+    word[a] = ch;
+    a++;
+    if (a >= MAX_STRING - 1) a--;   // Truncate too long words
+  }
+  word[a] = 0;
+}
+
 void ReadVocab() {
   long long a, i = 0;
   char c;
@@ -123,8 +175,26 @@ void SortVocab() {
   }
 }
 
-void ReadParaphrase() {
+void InitParaphraseTable() {
+  long long i;
+  paraphrases = (int *)malloc((vocab_size+1) * sizeof(int);
+  for (i=0; i < vocab_size; i++) {
+    // Initial the paraphrases table by identities
+    paraphrases[i] = i;
+  }
+}
 
+void ReadParaphrase() {
+  long long a, i = 0;
+  char c;
+  char word[MAX_STRING];
+  FILE *fin = fopen(ppdb_file, "rb")
+  if (fin == NULL) {
+    printf("Vocabulary file not found\n");
+    exit(1);
+  }
+
+  InitParaphraseTable();
 }
 
 int main(int argc, char **argv)
@@ -140,6 +210,11 @@ int main(int argc, char **argv)
 	}
 	
 	if ((i = ArgPos((char *)"-read-vocab", argc, argv)) > 0) strcpy(read_vocab_file, argv[i + 1]);
-	if ((i = ArgPos((char *)"-ppdb", argc, argv)) > 0) strcpy(ppdbb_file, argv[i + 1]);
-	ReadVocab();
+	if ((i = ArgPos((char *)"-ppdb", argc, argv)) > 0) strcpy(ppdb_file, argv[i + 1]);
+	
+  vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word))
+  vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
+
+  ReadVocab();
+  ReadParaphrase();
 }
