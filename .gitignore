@@ -34,3 +34,6 @@
 
 # Corpus files
 *.txt
+
+# Setting files
+*.json
