@@ -34,6 +34,13 @@
 
 # Corpus files
 *.txt
+text8
 
 # Setting files
-*.json
+tasks.json
+.vscode/tasks.json
+launch.json
+.vscode/launch.json
+
+
+
