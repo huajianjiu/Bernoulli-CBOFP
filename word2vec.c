@@ -493,21 +493,24 @@ void *TrainModelThread(void *id) {
           for (c = 0; c < layer1_size; c++) syn1[c + l2] += g * neu1[c];
         }
         // NEGATIVE SAMPLING
-        // TODO: modify this part to make paraphrases as positive samples
-        // and remove them in negative sampling
+        // I modified this part to make paraphrases as positive samples
+        // and remove them in negative sampling. Yuanzhi Ke 2016
         // For accuracy, now we only consider the most close paraphrase in ppdb_s, so just + 1        
         if (negative > 0) for (d = 0; d < negative + 1 + 1; d++) {
           if (d == 0) {
             target = word;
             label = 1;
           } else if (d == 1) {
-            target = paraphrases[word];
-            label = 1;
+            // 0(UNK) and -1 is not allowed. Yuanzhi Ke 2016
+            if (paraphrases[word] > 0) {
+              target = paraphrases[word];
+              label = 1;
+            } 
           } else {
             next_random = next_random * (unsigned long long)25214903917 + 11;
             target = table[(next_random >> 16) % table_size];
             if (target == 0) target = next_random % (vocab_size - 1) + 1;
-            if (target == word || target == paraphrases[word]) continue;            
+            if (target == word || (paraphrases[word] > 0 && target == paraphrases[word])) continue;          
             label = 0;
           }
           l2 = target * layer1_size;
@@ -563,13 +566,16 @@ void *TrainModelThread(void *id) {
             target = word;
             label = 1;
           } else if (d == 1) {
-            target = paraphrases[word];
-            label = 1;
+            // 0(UNK) and -1 is not allowed. Yuanzhi Ke 2016
+            if (paraphrases[word] > 0) {
+              target = paraphrases[word];
+              label = 1;
+            } 
           } else {
             next_random = next_random * (unsigned long long)25214903917 + 11;
             target = table[(next_random >> 16) % table_size];
             if (target == 0) target = next_random % (vocab_size - 1) + 1;
-            if (target == word || target == paraphrases[word]) continue;
+            if (target == word || (paraphrases[word] > 0 && target == paraphrases[word])) continue;
             label = 0;
           }
           l2 = target * layer1_size;
