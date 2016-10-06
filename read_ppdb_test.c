@@ -57,14 +57,6 @@ int SearchVocab(char *word) {
   return -1;
 }
 
-// Reads a word and returns its index in the vocabulary
-int ReadWordIndex(FILE *fin) {
-  char word[MAX_STRING];
-  ReadWord(word, fin);
-  if (feof(fin)) return -1;
-  return SearchVocab(word);
-}
-
 // Reads a single word from a file, assuming space + tab + EOL to be word boundaries
 void ReadWord(char *word, FILE *fin) {
   int a = 0, ch;
@@ -88,56 +80,12 @@ void ReadWord(char *word, FILE *fin) {
   word[a] = 0;
 }
 
-void ReadVocab() {
-  long long a, i = 0;
-  char c;
+// Reads a word and returns its index in the vocabulary
+int ReadWordIndex(FILE *fin) {
   char word[MAX_STRING];
-  FILE *fin = fopen(read_vocab_file, "rb");
-  if (fin == NULL) {
-    printf("Vocabulary file not found\n");
-    exit(1);
-  }
-  for (a = 0; a < vocab_hash_size; a++) vocab_hash[a] = -1;
-  vocab_size = 0;
-  while (1) {
-    ReadWord(word, fin);
-    if (feof(fin)) break;
-    a = AddWordToVocab(word);
-    fscanf(fin, "%lld%c", &vocab[a].cn, &c);
-    i++;
-  }
-  SortVocab();
-  if (debug_mode > 0) {
-    printf("Vocab size: %lld\n", vocab_size);
-    printf("Words in train file: %lld\n", train_words);
-  }
-  fin = fopen(train_file, "rb");
-  if (fin == NULL) {
-    printf("ERROR: training data file not found!\n");
-    exit(1);
-  }
-  fseek(fin, 0, SEEK_END);
-  file_size = ftell(fin);
-  fclose(fin);
-}
-
-// Adds a word to the vocabulary
-int AddWordToVocab(char *word) {
-  unsigned int hash, length = strlen(word) + 1;
-  if (length > MAX_STRING) length = MAX_STRING;
-  vocab[vocab_size].word = (char *)calloc(length, sizeof(char));
-  strcpy(vocab[vocab_size].word, word);
-  vocab[vocab_size].cn = 0;
-  vocab_size++;
-  // Reallocate memory if needed
-  if (vocab_size + 2 >= vocab_max_size) {
-    vocab_max_size += 1000;
-    vocab = (struct vocab_word *)realloc(vocab, vocab_max_size * sizeof(struct vocab_word));
-  }
-  hash = GetWordHash(word);
-  while (vocab_hash[hash] != -1) hash = (hash + 1) % vocab_hash_size;
-  vocab_hash[hash] = vocab_size - 1;
-  return vocab_size - 1;
+  ReadWord(word, fin);
+  if (feof(fin)) return -1;
+  return SearchVocab(word);
 }
 
 // Used later for sorting by word counts
@@ -175,9 +123,50 @@ void SortVocab() {
   }
 }
 
+
+// Adds a word to the vocabulary
+int AddWordToVocab(char *word) {
+  unsigned int hash, length = strlen(word) + 1;
+  if (length > MAX_STRING) length = MAX_STRING;
+  vocab[vocab_size].word = (char *)calloc(length, sizeof(char));
+  strcpy(vocab[vocab_size].word, word);
+  vocab[vocab_size].cn = 0;
+  vocab_size++;
+  // Reallocate memory if needed
+  if (vocab_size + 2 >= vocab_max_size) {
+    vocab_max_size += 1000;
+    vocab = (struct vocab_word *)realloc(vocab, vocab_max_size * sizeof(struct vocab_word));
+  }
+  hash = GetWordHash(word);
+  while (vocab_hash[hash] != -1) hash = (hash + 1) % vocab_hash_size;
+  vocab_hash[hash] = vocab_size - 1;
+  return vocab_size - 1;
+}
+
+void ReadVocab() {
+  long long a, i = 0;
+  char c;
+  char word[MAX_STRING];
+  FILE *fin = fopen(read_vocab_file, "rb");
+  if (fin == NULL) {
+    printf("Vocabulary file not found\n");
+    exit(1);
+  }
+  for (a = 0; a < vocab_hash_size; a++) vocab_hash[a] = -1;
+  vocab_size = 0;
+  while (1) {
+    ReadWord(word, fin);
+    if (feof(fin)) break;
+    a = AddWordToVocab(word);
+    fscanf(fin, "%lld%c", &vocab[a].cn, &c);
+    i++;
+  }
+  SortVocab();
+}
+
 void InitParaphraseTable() {
   long long i;
-  paraphrases = (int *)malloc((vocab_size+1) * sizeof(int);
+  paraphrases = (int *)malloc((vocab_size+1) * sizeof(int));
   for (i=0; i < vocab_size; i++) {
     // Initial the paraphrases table by identities
     paraphrases[i] = i;
@@ -190,9 +179,9 @@ void ReadParaphrase() {
   char ppword[MAX_STRING];
   char baseword[MAX_STRING];
 
-  FILE *fin = fopen(ppdb_file, "rb")
+  FILE *fin = fopen(ppdb_file, "rb");
   if (fin == NULL) {
-    printf("Vocabulary file not found\n");
+    printf("PPDB file not found\n");
     exit(1);
   }
   InitParaphraseTable();
@@ -201,31 +190,40 @@ void ReadParaphrase() {
     if (feof(fin)) break;
     i++;
     if (i>0 && i%2 == 0) {
-      paraphrases[SearchVocab(baseword)] = SearchVocab(ppword);
+      if (SearchVocab(baseword) > 0 && SearchVocab(ppword) > 0) {
+        paraphrases[SearchVocab(baseword)] = SearchVocab(ppword);
+        paraphrases[SearchVocab(ppword)] = SearchVocab(baseword);
+      }
     }else{
       strcpy(baseword, ppword);
     }
   }
 }
 
-int main(int argc, char **argv)
+int ArgPos(char *str, int argc, char **argv) {
+  int a;
+  for (a = 1; a < argc; a++) if (!strcmp(str, argv[a])) {
+    if (a == argc - 1) {
+      printf("Argument missing for %s\n", str);
+      exit(1);
+    }
+    return a;
+  }
+  return -1;
+}
+
+int main()
 {
 	int i;
-	if (argc < 3) {
-		printf("Options:\n");
-		printf("\t-read-vocab <file>\n");
-		printf("\t\tThe vocabulary will be read from <file>\n");
-		printf("\t-ppdb <int>\n");
-		printf("\t\tThe ppdb  will be read from <file>\n");
-		return 0;
-	}
-	
-	if ((i = ArgPos((char *)"-read-vocab", argc, argv)) > 0) strcpy(read_vocab_file, argv[i + 1]);
-	if ((i = ArgPos((char *)"-ppdb", argc, argv)) > 0) strcpy(ppdb_file, argv[i + 1]);
-	
+
+  strcpy(read_vocab_file, "vocab.txt");
+  strcpy(ppdb_file, "ppdb_s_strip.txt");
+
   vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
   vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
 
   ReadVocab();
   ReadParaphrase();
+
+  printf("End.");
 }
