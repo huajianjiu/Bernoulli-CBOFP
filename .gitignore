@@ -42,5 +42,11 @@ tasks.json
 launch.json
 .vscode/launch.json
 
+#outputs of the program
+word2vec
+read_ppdb_test
+*.bin
+*.swp
 
-
+#linxu shells
+*.sh
