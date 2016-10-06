@@ -346,8 +346,8 @@ void InitParaphraseTable() {
   long long i;
   paraphrases = (int *)malloc((vocab_size+1) * sizeof(int));
   for (i=0; i < vocab_size; i++) {
-    // Initial the paraphrases table by identities
-    paraphrases[i] = i;
+    // Initial the paraphrases table by -1
+    paraphrases[i] = -1;
   }
 }
 
