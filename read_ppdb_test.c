@@ -36,6 +36,8 @@ int hs = 0, negative = 5;
 const int table_size = 1e8;
 int *table;
 
+int *para_map;
+
 void ReadVocab() {
   long long a, i = 0;
   char c;
