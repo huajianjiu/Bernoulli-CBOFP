@@ -495,8 +495,8 @@ void *TrainModelThread(void *id) {
         // NEGATIVE SAMPLING
         // I modified this part to make paraphrases as positive samples
         // and remove them in negative sampling. Yuanzhi Ke 2016
-        // For accuracy, now we only consider the most close paraphrase in ppdb_s, so just + 1        
-        if (negative > 0) for (d = 0; d < negative + 1 + 1; d++) {
+        // let the total num of samples equal to the original one        
+        if (negative > 0) for (d = 0; d < negative + 1; d++) {
           if (d == 0) {
             target = word;
             label = 1;
@@ -560,8 +560,8 @@ void *TrainModelThread(void *id) {
         // NEGATIVE SAMPLING
         // I modified this part to make paraphrases as positive samples
         // and remove them in negative sampling. Yuanzhi Ke 2016
-        // For accuracy, now we only consider the most close paraphrase in ppdb_s, so just + 1
-        if (negative > 0) for (d = 0; d < negative + 1 +1 ; d++) {
+        // let the total num of samples equal to the original one   
+        if (negative > 0) for (d = 0; d < negative + 1; d++) {
           if (d == 0) {
             target = word;
             label = 1;
