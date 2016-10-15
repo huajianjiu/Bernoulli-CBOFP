@@ -21,6 +21,7 @@
 #include <string.h>
 #include <math.h>
 #include <pthread.h>
+#include "MT.h"
 
 #define MAX_STRING 100
 #define EXP_TABLE_SIZE 1000
@@ -55,7 +56,10 @@ int hs = 0, negative = 5;
 const int table_size = 1e8;
 int *table;
 
+int dropout = 1;
+
 int *paraphrases;
+float *paraphrase_scores;
 
 void InitUnigramTable() {
   int a, i;
@@ -353,6 +357,15 @@ void InitParaphraseTable() {
   }
 }
 
+void InitParaphraseScoreTable() {
+  long long i;
+  paraphrase_scores = (int *)malloc((vocab_size+1) * PPDB_TABLE_SIZE * sizeof(int));
+  for (i=0; i < (vocab_size + 1) * PPDB_TABLE_SIZE; i++) {
+    // Initial the paraphrase scores table by 0
+    paraphrases[i] = 0;
+  }
+}
+
 // Read paraphrases from file. Yuanzhi Ke. 2016
 void ReadParaphrase() {
   long long a, i = 0;
@@ -377,7 +390,9 @@ void ReadParaphrase() {
       i++;
     }
     if ((strcmp(ppword, (char *)"</s>")) && (i>0)){
-      if (SearchVocab(baseword) > 0 && SearchVocab(ppword) > 0 && (!(i > PPDB_TABLE_SIZE)))
+      if (i%2==0)
+        paraphrase_scores[(SearchVocab(baseword)) * PPDB_TABLE_SIZE * + i - 2] = atof(ppword);
+      else if (SearchVocab(baseword) > 0 && SearchVocab(ppword) > 0 && (!(i > PPDB_TABLE_SIZE)))
         paraphrases[(SearchVocab(baseword)) * PPDB_TABLE_SIZE * + i - 1] = SearchVocab(ppword);
       i++;
     }
@@ -573,6 +588,7 @@ void *TrainModelThread(void *id) {
         // NEGATIVE SAMPLING
         // I modified this part to make paraphrases as positive samples
         // and remove them in negative sampling. Yuanzhi Ke 2016
+        // TODO: randomly drop the positive sample drown by the lexicon according to the PPDB2.0score/5 as the probability 
         if (negative > 0) for (d = 0; d < negative + 1 + PPDB_TABLE_SIZE; d++) {
           if (d == 0) {
             target = word;
@@ -747,7 +763,9 @@ int main(int argc, char **argv) {
     printf("\t-read-vocab <file>\n");
     printf("\t\tThe vocabulary will be read from <file>, not constructed from the training data\n");
     printf("\t-read-paraphrases <file>\n");
-    printf("\t\tThe paraphrases will be read from <file>. Default is 'ppdb_s_strip.txt' ");
+    printf("\t\tThe paraphrases will be read from <file>. Default is 'ppdb_s_strip.txt'\n");
+    printf("\t-dropout <int>\n");
+    printf("\t\tDropout outputs of lexicon layer according to the ppdb2.0score. default is 1(use 0 for no drop out)\n");
     printf("\t-cbow <int>\n");
     printf("\t\tUse the continuous bag of words model; default is 1 (use 0 for skip-gram model)\n");
     printf("\nExamples:\n");
@@ -765,6 +783,7 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-binary", argc, argv)) > 0) binary = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-cbow", argc, argv)) > 0) cbow = atoi(argv[i + 1]);
   if (cbow) alpha = 0.05;
+  if ((i = ArgPos((char *)"-dropout", argc, argv)) > 0) dropout = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-alpha", argc, argv)) > 0) alpha = atof(argv[i + 1]);
   if ((i = ArgPos((char *)"-output", argc, argv)) > 0) strcpy(output_file, argv[i + 1]);
   if ((i = ArgPos((char *)"-window", argc, argv)) > 0) window = atoi(argv[i + 1]);
