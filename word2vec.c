@@ -516,12 +516,18 @@ void *TrainModelThread(void *id) {
         // NEGATIVE SAMPLING
         // I modified this part to make paraphrases as positive samples
         // and remove them in negative sampling. Yuanzhi Ke 2016        
+        // If dropout == 1 randomly drop the positive sample drown by the lexicon according to the PPDB2.0score/7.0 as the probability
+        // If dropout == -1 dropout every input from pp layer 
+        // If dropout == 0 do not drop out        
         if (negative > 0) for (d = 0; d < negative + 1 + PPDB_TABLE_SIZE; d++) {
           if (d == 0) {
             target = word;
             label = 1;
           } else if (!(d > PPDB_TABLE_SIZE)) {
             // 0(UNK) and -1 is not allowed. Yuanzhi Ke 2016
+            // genrand_real3 is defined in MT.h. it generate a random number in uniform distribution
+            if (dropout == -1) continue;
+            if ((dropout == 1) && (paraphrase_scores[word * PPDB_TABLE_SIZE + d - 1] < 7*genrand_real3()) continue;
             if (paraphrases[word * PPDB_TABLE_SIZE + d - 1] > 0) {
               target = paraphrases[word];
               label = 1;
@@ -588,13 +594,18 @@ void *TrainModelThread(void *id) {
         // NEGATIVE SAMPLING
         // I modified this part to make paraphrases as positive samples
         // and remove them in negative sampling. Yuanzhi Ke 2016
-        // TODO: randomly drop the positive sample drown by the lexicon according to the PPDB2.0score/5 as the probability 
+        // If dropout == 1 randomly drop the positive sample drown by the lexicon according to the PPDB2.0score/7.0 as the probability
+        // If dropout == -1 dropout every input from pp layer 
+        // If dropout == 0 do not drop out  
         if (negative > 0) for (d = 0; d < negative + 1 + PPDB_TABLE_SIZE; d++) {
           if (d == 0) {
             target = word;
             label = 1;
           } else if (!(d > PPDB_TABLE_SIZE)) {
             // 0(UNK) and -1 is not allowed. Yuanzhi Ke 2016
+            // genrand_real3 is defined in MT.h. it generate a random number in uniform distribution
+            if (dropout == -1) continue;
+            if ((dropout == 1) && (paraphrase_scores[word * PPDB_TABLE_SIZE + d - 1] < 7*genrand_real3()) continue;
             if (paraphrases[word * PPDB_TABLE_SIZE + d - 1] > 0) {
               target = paraphrases[word];
               label = 1;
@@ -767,7 +778,7 @@ int main(int argc, char **argv) {
     printf("\t-dropout <int>\n");
     printf("\t\tDropout outputs of lexicon layer according to the ppdb2.0score. default is 1(use 0 for no drop out)\n");
     printf("\t-cbow <int>\n");
-    printf("\t\tUse the continuous bag of words model; default is 1 (use 0 for skip-gram model)\n");
+    printf("\t\tUse the continuous bag of words model; default is 1 for dropout. Use 0 for skip-gram model, -1 for dropout everthing(use paraphrase layer only to reject negative samples.))\n");
     printf("\nExamples:\n");
     printf("./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -cbow 1 -iter 3\n\n");
     return 0;
