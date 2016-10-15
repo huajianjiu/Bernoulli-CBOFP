@@ -28,6 +28,8 @@
 #define MAX_SENTENCE_LENGTH 1000
 #define MAX_CODE_LENGTH 40
 
+#define PPDB_TABLE_SIZE 10
+
 const int vocab_hash_size = 30000000;  // Maximum 30 * 0.7 = 21M words in the vocabulary
 
 typedef float real;                    // Precision of float numbers
@@ -344,8 +346,8 @@ void ReadVocab() {
 // Initalize the paraphrases table. Yuanzhi Ke. 2016
 void InitParaphraseTable() {
   long long i;
-  paraphrases = (int *)malloc((vocab_size+1) * sizeof(int));
-  for (i=0; i < vocab_size; i++) {
+  paraphrases = (int *)malloc((vocab_size+1) * PPDB_TABLE_SIZE * sizeof(int));
+  for (i=0; i < (vocab_size + 1) * PPDB_TABLE_SIZE; i++) {
     // Initial the paraphrases table by -1
     paraphrases[i] = -1;
   }
@@ -367,14 +369,17 @@ void ReadParaphrase() {
   while (1) {
     ReadWord(ppword, fin);
     if (feof(fin)) break;
-    i++;
-    if (i>0 && i%2 == 0) {
-      if (SearchVocab(baseword) > 0 && SearchVocab(ppword) > 0) {
-        paraphrases[SearchVocab(baseword)] = SearchVocab(ppword);
-        paraphrases[SearchVocab(ppword)] = SearchVocab(baseword);
-      }
-    }else{
+    if ((!strcmp(ppword, (char *)"</s>")) && (i>0)){
+      i = 0;
+    }
+    if ((strcmp(ppword, (char *)"</s>")) && (i=0)){
       strcpy(baseword, ppword);
+      i++;
+    }
+    if ((strcmp(ppword, (char *)"</s>")) && (i>0)){
+      if (SearchVocab(baseword) > 0 && SearchVocab(ppword) > 0 && (!(i > PPDB_TABLE_SIZE)))
+        paraphrases[(SearchVocab(baseword)) * PPDB_TABLE_SIZE * + i - 1] = SearchVocab(ppword);
+      i++;
     }
   }
 }
@@ -408,6 +413,7 @@ void *TrainModelThread(void *id) {
   long long word_count = 0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1];
   long long l1, l2, c, target, label, local_iter = iter;
   unsigned long long next_random = (long long)id;
+  int sample_reject = 0;
   real f, g;
   clock_t now;
   real *neu1 = (real *)calloc(layer1_size, sizeof(real));
@@ -494,23 +500,30 @@ void *TrainModelThread(void *id) {
         }
         // NEGATIVE SAMPLING
         // I modified this part to make paraphrases as positive samples
-        // and remove them in negative sampling. Yuanzhi Ke 2016
-        // let the total num of samples equal to the original one        
-        if (negative > 0) for (d = 0; d < negative + 1; d++) {
+        // and remove them in negative sampling. Yuanzhi Ke 2016        
+        if (negative > 0) for (d = 0; d < negative + 1 + PPDB_TABLE_SIZE; d++) {
           if (d == 0) {
             target = word;
             label = 1;
-          } else if (d == 1) {
+          } else if (!(d > PPDB_TABLE_SIZE)) {
             // 0(UNK) and -1 is not allowed. Yuanzhi Ke 2016
-            if (paraphrases[word] > 0) {
+            if (paraphrases[word * PPDB_TABLE_SIZE + d - 1] > 0) {
               target = paraphrases[word];
               label = 1;
             } 
           } else {
+            sample_reject = 0;
             next_random = next_random * (unsigned long long)25214903917 + 11;
             target = table[(next_random >> 16) % table_size];
             if (target == 0) target = next_random % (vocab_size - 1) + 1;
-            if (target == word || (paraphrases[word] > 0 && target == paraphrases[word])) continue;          
+            if (target == word) sample_reject = 1;
+            if (paraphrases[word * PPDB_TABLE_SIZE] > 0){
+              for (wi = 0; wi < PPDB_TABLE_SIZE; wi++){
+                if (paraphrases[word * PPDB_TABLE_SIZE + wi] > 0 && target == paraphrases[word * PPDB_TABLE_SIZE + wi])
+                  sample_reject = 1;
+              }
+            }
+            if (sample_reject) continue;          
             label = 0;
           }
           l2 = target * layer1_size;
@@ -560,22 +573,29 @@ void *TrainModelThread(void *id) {
         // NEGATIVE SAMPLING
         // I modified this part to make paraphrases as positive samples
         // and remove them in negative sampling. Yuanzhi Ke 2016
-        // let the total num of samples equal to the original one   
-        if (negative > 0) for (d = 0; d < negative + 1; d++) {
+        if (negative > 0) for (d = 0; d < negative + 1 + PPDB_TABLE_SIZE; d++) {
           if (d == 0) {
             target = word;
             label = 1;
-          } else if (d == 1) {
+          } else if (!(d > PPDB_TABLE_SIZE)) {
             // 0(UNK) and -1 is not allowed. Yuanzhi Ke 2016
-            if (paraphrases[word] > 0) {
+            if (paraphrases[word * PPDB_TABLE_SIZE + d - 1] > 0) {
               target = paraphrases[word];
               label = 1;
             } 
           } else {
+            sample_reject = 0;
             next_random = next_random * (unsigned long long)25214903917 + 11;
             target = table[(next_random >> 16) % table_size];
             if (target == 0) target = next_random % (vocab_size - 1) + 1;
-            if (target == word || (paraphrases[word] > 0 && target == paraphrases[word])) continue;
+            if (target == word) sample_reject = 1;
+            if (paraphrases[word * PPDB_TABLE_SIZE] > 0){
+              for (wi = 0; wi < PPDB_TABLE_SIZE; wi++){
+                if (paraphrases[word * PPDB_TABLE_SIZE + wi] > 0 && target == paraphrases[word * PPDB_TABLE_SIZE + wi])
+                  sample_reject = 1;
+              }
+            }
+            if (sample_reject) continue;
             label = 0;
           }
           l2 = target * layer1_size;
@@ -759,7 +779,7 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-read-paraphrases", argc, argv)) > 0) {
     strcpy(ppdb_file, argv[i + 1]);
   } else {
-    strcpy(ppdb_file, "ppdb_s_strip.txt");
+    strcpy(ppdb_file, "ppdb.txt");
   }
 
   vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
