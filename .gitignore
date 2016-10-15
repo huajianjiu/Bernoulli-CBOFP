@@ -35,6 +35,7 @@
 # Corpus files
 *.txt
 text8
+text9
 
 # Setting files
 tasks.json
