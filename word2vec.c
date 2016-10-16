@@ -818,7 +818,7 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-read-paraphrases", argc, argv)) > 0) {
     strcpy(ppdb_file, argv[i + 1]);
   } else {
-    strcpy(ppdb_file, "ppdb.txt");
+    strcpy(ppdb_file, "ppdb2.txt");
   }
 
   vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
