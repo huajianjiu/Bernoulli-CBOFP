@@ -429,6 +429,7 @@ void *TrainModelThread(void *id) {
   long long l1, l2, c, target, label, local_iter = iter;
   unsigned long long next_random = (long long)id;
   int sample_reject = 0;
+  int negative_local = 0;
   real f, g;
   clock_t now;
   real *neu1 = (real *)calloc(layer1_size, sizeof(real));
@@ -519,7 +520,9 @@ void *TrainModelThread(void *id) {
         // If dropout == 1 randomly drop the positive sample drown by the lexicon according to the PPDB2.0score/7.0 as the probability
         // If dropout == -1 dropout every input from pp layer 
         // If dropout == 0 do not drop out        
-        if (negative > 0) for (d = 0; d < negative + 1 + PPDB_TABLE_SIZE; d++) {
+        // negative samples (of set number) drawn for both the baseword and the pp layer outputs
+        negative_local = negative
+        if (negative_local > 0) for (d = 0; d < negative_local + 1 + PPDB_TABLE_SIZE; d++) {
           if (d == 0) {
             target = word;
             label = 1;
@@ -531,6 +534,8 @@ void *TrainModelThread(void *id) {
             if (paraphrases[word * PPDB_TABLE_SIZE + d - 1] > 0) {
               target = paraphrases[word];
               label = 1;
+              // add negative samples for new input from pp layer
+              negative_local += negative;
             } 
           } else {
             sample_reject = 0;
@@ -597,7 +602,9 @@ void *TrainModelThread(void *id) {
         // If dropout == 1 randomly drop the positive sample drown by the lexicon according to the PPDB2.0score/7.0 as the probability
         // If dropout == -1 dropout every input from pp layer 
         // If dropout == 0 do not drop out  
-        if (negative > 0) for (d = 0; d < negative + 1 + PPDB_TABLE_SIZE; d++) {
+        // negative samples (of set number) drawn for both the baseword and the pp layer outputs
+        negative_local = negative        
+        if (negative_local > 0) for (d = 0; d < negative_local + 1 + PPDB_TABLE_SIZE; d++) {
           if (d == 0) {
             target = word;
             label = 1;
@@ -609,6 +616,8 @@ void *TrainModelThread(void *id) {
             if (paraphrases[word * PPDB_TABLE_SIZE + d - 1] > 0) {
               target = paraphrases[word];
               label = 1;
+              // add negative samples for new input from pp layer
+              negative_local += negative;
             } 
           } else {
             sample_reject = 0;
