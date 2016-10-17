@@ -534,6 +534,7 @@ void *TrainModelThread(void *id) {
             }
             if (dropout == 1){
               // generate the weight f(Xik) from bernouli distribution
+              // generate another random number to be indepedent for the subsample of frequent words
               static int x=10;
               real ran_f;
               int a=1103515245,b=12345,c=2147483647;
@@ -639,7 +640,7 @@ void *TrainModelThread(void *id) {
               int a=1103515245,b=12345,c=2147483647;
               x = (a*x + b)&c;
               ran_f = ((real)x+1.0) / ((real)c+2.0) * 7;
-              
+
               if (paraphrase_scores[word * PPDB_TABLE_SIZE + d - 1]/7 < ran_f) fxik = 0;
               else fxik = 1;
               if (!fxik)
