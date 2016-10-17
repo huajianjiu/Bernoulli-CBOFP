@@ -48,6 +48,3 @@ word2vec
 read_ppdb_test
 *.bin
 *.swp
-
-#linxu shells
-*.sh
