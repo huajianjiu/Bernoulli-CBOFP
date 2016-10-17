@@ -534,7 +534,6 @@ void *TrainModelThread(void *id) {
             }
             if (dropout == 1){
               // generate the weight f(Xik) from bernouli distribution
-              // generate another random number to be indepedent for the subsample of frequent words
               static int x=10;
               real ran_f;
               int a=1103515245,b=12345,c=2147483647;
@@ -564,8 +563,18 @@ void *TrainModelThread(void *id) {
             if (target == word) sample_reject = 1;
             if (paraphrases[word * PPDB_TABLE_SIZE] > 0){
               for (wi = 0; wi < PPDB_TABLE_SIZE; wi++){
-                if (paraphrases[word * PPDB_TABLE_SIZE + wi] > 0 && target == paraphrases[word * PPDB_TABLE_SIZE + wi])
-                  sample_reject = 1;
+                if (paraphrases[word * PPDB_TABLE_SIZE + wi] > 0 && target == paraphrases[word * PPDB_TABLE_SIZE + wi]) {
+                  // if dropout == 1, drop negative sampling reject by pp layer too
+                  if (dropout == 1){
+                    // generate the weight f(Xik) from bernouli distribution
+                    static int x=10;
+                    real ran_f;
+                    int a=1103515245,b=12345,c=2147483647;
+                    x = (a*x + b)&c;
+                    ran_f = ((real)x+1.0) / ((real)c+2.0) * 7;
+                    if (paraphrase_scores[word * PPDB_TABLE_SIZE + d - 1] < ran_f) sample_reject = 1;
+                  } else sample_reject = 1;
+                }
               }
             }
             if (sample_reject) continue;          
@@ -664,8 +673,18 @@ void *TrainModelThread(void *id) {
             if (target == word) sample_reject = 1;
             if (paraphrases[word * PPDB_TABLE_SIZE] > 0){
               for (wi = 0; wi < PPDB_TABLE_SIZE; wi++){
-                if (paraphrases[word * PPDB_TABLE_SIZE + wi] > 0 && target == paraphrases[word * PPDB_TABLE_SIZE + wi])
-                  sample_reject = 1;
+                if (paraphrases[word * PPDB_TABLE_SIZE + wi] > 0 && target == paraphrases[word * PPDB_TABLE_SIZE + wi]) {
+                  // if dropout == 1, drop negative sampling reject by pp layer too
+                  if (dropout == 1){
+                    // generate the weight f(Xik) from bernouli distribution
+                    static int x=10;
+                    real ran_f;
+                    int a=1103515245,b=12345,c=2147483647;
+                    x = (a*x + b)&c;
+                    ran_f = ((real)x+1.0) / ((real)c+2.0) * 7;
+                    if (paraphrase_scores[word * PPDB_TABLE_SIZE + d - 1] < ran_f) sample_reject = 1;
+                  } else sample_reject = 1;
+                }
               }
             }
             if (sample_reject) continue;
