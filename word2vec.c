@@ -21,7 +21,6 @@
 #include <string.h>
 #include <math.h>
 #include <pthread.h>
-#include "MT.h"
 
 #define MAX_STRING 100
 #define EXP_TABLE_SIZE 1000
@@ -430,6 +429,7 @@ void *TrainModelThread(void *id) {
   unsigned long long next_random = (long long)id;
   int sample_reject = 0;
   int negative_local = 0;
+  int fxik = 0;
   real f, g;
   clock_t now;
   real *neu1 = (real *)calloc(layer1_size, sizeof(real));
@@ -517,25 +517,43 @@ void *TrainModelThread(void *id) {
         // NEGATIVE SAMPLING
         // I modified this part to make paraphrases as positive samples
         // and remove them in negative sampling. Yuanzhi Ke 2016        
-        // If dropout == 1 randomly drop the positive sample drown by the lexicon according to the PPDB2.0score/7.0 as the probability
+        // If dropout == 1 weight or drop the positive sample drown by the lexicon according to the PPDB2.0score/7.0 as the probability
         // If dropout == -1 dropout every input from pp layer 
         // If dropout == 0 do not drop out        
         // negative samples (of set number) drawn for both the baseword and the pp layer outputs
-        negative_local = negative
+        negative_local = negative * (1 + PPDB_TABLE_SIZE);
         if (negative_local > 0) for (d = 0; d < negative_local + 1 + PPDB_TABLE_SIZE; d++) {
           if (d == 0) {
             target = word;
             label = 1;
           } else if (!(d > PPDB_TABLE_SIZE)) {
             // 0(UNK) and -1 is not allowed. Yuanzhi Ke 2016
-            // genrand_real3 is defined in MT.h. it generate a random number in uniform distribution
-            if (dropout == -1) continue;
-            if ((dropout == 1) && (paraphrase_scores[word * PPDB_TABLE_SIZE + d - 1] < 7*genrand_real3()) continue;
-            if (paraphrases[word * PPDB_TABLE_SIZE + d - 1] > 0) {
+            if ((dropout == -1) || (paraphrases[word * PPDB_TABLE_SIZE + d - 1] <= 0)) {
+              negative_local -= negative;
+              continue;
+            }
+            if (dropout == 1){
+              // generate the weight f(Xik) from bernouli distribution
+              static int x=10;
+              real ran_f;
+              int a=1103515245,b=12345,c=2147483647;
+              x = (a*x + b)&c;
+              ran_f = ((real)x+1.0) / ((real)c+2.0) * 7;
+
+              if (paraphrase_scores[word * PPDB_TABLE_SIZE + d - 1] < ran_f) fxik = 0;
+              else fxik = 1;
+              if (!fxik)
+              {
+                negative_local -= negative;
+                continue;
+              } else {
+                target = paraphrases[word];
+                label = 1;
+              }
+            }
+            if (dropout == 0){
               target = paraphrases[word];
               label = 1;
-              // add negative samples for new input from pp layer
-              negative_local += negative;
             } 
           } else {
             sample_reject = 0;
@@ -599,25 +617,43 @@ void *TrainModelThread(void *id) {
         // NEGATIVE SAMPLING
         // I modified this part to make paraphrases as positive samples
         // and remove them in negative sampling. Yuanzhi Ke 2016
-        // If dropout == 1 randomly drop the positive sample drown by the lexicon according to the PPDB2.0score/7.0 as the probability
+        // If dropout == 1 weight or drop the positive sample drown by the lexicon according to the PPDB2.0score/7.0 as the probability
         // If dropout == -1 dropout every input from pp layer 
         // If dropout == 0 do not drop out  
         // negative samples (of set number) drawn for both the baseword and the pp layer outputs
-        negative_local = negative        
+        negative_local = negative * (1 + PPDB_TABLE_SIZE);     
         if (negative_local > 0) for (d = 0; d < negative_local + 1 + PPDB_TABLE_SIZE; d++) {
           if (d == 0) {
             target = word;
             label = 1;
           } else if (!(d > PPDB_TABLE_SIZE)) {
             // 0(UNK) and -1 is not allowed. Yuanzhi Ke 2016
-            // genrand_real3 is defined in MT.h. it generate a random number in uniform distribution
-            if (dropout == -1) continue;
-            if ((dropout == 1) && (paraphrase_scores[word * PPDB_TABLE_SIZE + d - 1] < 7*genrand_real3()) continue;
-            if (paraphrases[word * PPDB_TABLE_SIZE + d - 1] > 0) {
+            if ((dropout == -1) || (paraphrases[word * PPDB_TABLE_SIZE + d - 1] <= 0)) {
+              negative_local -= negative;
+              continue;
+            }
+            if (dropout == 1){
+              // generate the weight f(Xik) from bernouli distribution
+              static int x=10;
+              real ran_f;
+              int a=1103515245,b=12345,c=2147483647;
+              x = (a*x + b)&c;
+              ran_f = ((real)x+1.0) / ((real)c+2.0) * 7;
+              
+              if (paraphrase_scores[word * PPDB_TABLE_SIZE + d - 1]/7 < ran_f) fxik = 0;
+              else fxik = 1;
+              if (!fxik)
+              {
+                negative_local -= negative;
+                continue;
+              } else {
+                target = paraphrases[word];
+                label = 1;
+              }
+            }
+            if (dropout == 0){
               target = paraphrases[word];
               label = 1;
-              // add negative samples for new input from pp layer
-              negative_local += negative;
             } 
           } else {
             sample_reject = 0;
@@ -662,6 +698,13 @@ void *TrainModelThread(void *id) {
 void TrainModel() {
   long a, b, c, d;
   FILE *fo;
+  pthread_attr_t attr;
+  int s;
+  // int stack_size; 
+
+  // s = pthread_attr_init(&attr)
+  // s = 
+
   pthread_t *pt = (pthread_t *)malloc(num_threads * sizeof(pthread_t));
   printf("Starting training using file %s\n", train_file);
   starting_alpha = alpha;
