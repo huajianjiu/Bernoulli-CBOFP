@@ -521,7 +521,7 @@ void *TrainModelThread(void *id) {
         // If dropout == -1 dropout every input from pp layer 
         // If dropout == 0 do not drop out        
         // negative samples (of set number) drawn for both the baseword and the pp layer outputs
-        negative_local = negative * (1 + PPDB_TABLE_SIZE);
+        negative_local = negative;
         if (negative_local > 0) for (d = 0; d < negative_local + 1 + PPDB_TABLE_SIZE; d++) {
           if (d == 0) {
             target = word;
@@ -529,7 +529,7 @@ void *TrainModelThread(void *id) {
           } else if (!(d > PPDB_TABLE_SIZE)) {
             // 0(UNK) and -1 is not allowed. Yuanzhi Ke 2016
             if ((dropout == -1) || (paraphrases[word * PPDB_TABLE_SIZE + d - 1] <= 0)) {
-              negative_local -= negative;
+              //negative_local -= negative;
               continue;
             }
             if (dropout == 1){
@@ -545,7 +545,7 @@ void *TrainModelThread(void *id) {
               else fxik = 1;
               if (!fxik)
               {
-                negative_local -= negative;
+                //negative_local -= negative;
                 continue;
               } else {
                 target = paraphrases[word];
