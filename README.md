@@ -1,6 +1,6 @@
-# CB-SGwithPP
+# PCBP
 
-## A Simple Idea Using a Lexicon to Improve CBOW/Skip-gram Negative Sampling
+## Probablilistic Continous Bag-of-Paraphrases
 Modified the word2vec.    
 We add a semantic lexicon layer between the input layer and the hidden layer.   
 The lexicon layer also participate into the sampling process in negative sampling to accpet/reject samples.   
