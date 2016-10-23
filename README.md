@@ -1,7 +1,6 @@
-# PCBP
+# Learning Word Embedding from a corpus and a lexicon by "Word Replacing with Confidence"
 
-## Probablilistic Continous Bag-of-Paraphrases
-Modified the word2vec.    
+The source code is modified from word2vec.    
 We add a semantic lexicon layer between the input layer and the hidden layer.   
 The lexicon layer also participate into the sampling process in negative sampling to accpet/reject samples.   
 
