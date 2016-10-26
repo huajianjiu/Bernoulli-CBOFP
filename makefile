@@ -4,11 +4,11 @@ CFLAGS = -lm -pthread -O3 -march=native -Wall -funroll-loops -Wno-unused-result
 
 all: word2vec
 
-word2vec : word2vec.c
-	$(CC) word2vec.c -o word2vec $(CFLAGS)
+word2vec : bwrwc_word2vec.c
+	$(CC) bwrwc_word2vec.c -o bwrwc_word2vec $(CFLAGS)
 
-debug : word2vec.c
-	$(CC) word2vec.c -o debug $(CFLAGS) -g
+debug : bwrwc_word2vec.c
+	$(CC) bwrwc_word2vec.c -o bwrwc_debug $(CFLAGS) -g
 
 clean:
-	rm -rf word2vec read_ppdb_test
+	rm -rf bwrwc_word2vec bwrwc_debug
