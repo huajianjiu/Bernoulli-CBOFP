@@ -4,6 +4,8 @@ The source code is based on the source code of word2vec(https://code.google.com/
 We add a semantic lexicon layer between the input layer and the hidden layer to train word embeddings with a corpus and a lexicon.   
 The output of the lexicon layer is weighted by a confidence coeffience that depends on different words in the context.  
 The sample code use enwiki9 and PPDB2.0[4] to train the word embeddings..
+PPDB2.txt is a paraphrase table extracted from PPDB2.0 for the vocabulary of enwiki9.
+Wiki clearning script wikifil.pl is written by Matt Mahoney http://mattmahoney.net/dc/textdata
 
 ## References    
   [1]Tomas Mikolov, Kai Chen, Greg Corrado, and Jeffrey Dean. Efficient Estimation of Word Representations in Vector Space. In Proceedings of Workshop at ICLR, 2013.>   
