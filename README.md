@@ -12,7 +12,7 @@ make
 
 ##WANNA TRAIN ANOTHER CORPUS
 0. Get the PPDB version (>2.0) you want at http://paraphrase.org/#/download  
-0. Make and run fuzzypp_word2vec.c with -save-vocab to get the vocabulary file. Without the paraphrase table file it will throw exception, but you can get the vocabulary file.  
+0. Make and run fuzzypp_word2vec.c with -save-vocab to get the vocabulary file. Without the paraphrase table file it will throw an exception, but you can get the vocabulary file.  
 0. Run PPDB.py
 0. Run fuzzypp_word2vec again
 
