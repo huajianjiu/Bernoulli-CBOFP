@@ -5,12 +5,12 @@ The implement of the model and method in our paper "Fuzzy paraphrases in learnin
 The sample code use enwiki9 and PPDB2.0[4,5,6] to train the word embeddings..
 
 ##FILES
-bwrwc_word2vec.c: The implement of the model and method on the basis of the source code of word2vec by Mikolov et al.
-  compute-accuracy.c: The script to run the word analogical reasoning task by Mikolov et al.
-  demo-word.sh: The script to run a demo using enwiki9 and PPDB2.0 to learn word embeddings and then run the word analogical reasoning task.
-  PPDB2.txt: It is a paraphrase table extracted from PPDB2.0 for the vocabulary of enwiki9.
-  questions-words.txt: The word analogical reasoning task dataset.
-wikifill.pl: It is a wiki clearning script written by Matt Mahoney http://mattmahoney.net/dc/textdata
+bwrwc_word2vec.c: The implement of the model and method on the basis of the source code of word2vec by Mikolov et al.  
+  compute-accuracy.c: The script to run the word analogical reasoning task by Mikolov et al.  
+  demo-word.sh: The script to run a demo using enwiki9 and PPDB2.0 to learn word embeddings and then run the word analogical reasoning task.  
+  PPDB2.txt: It is a paraphrase table extracted from PPDB2.0 for the vocabulary of enwiki9.  
+  questions-words.txt: The word analogical reasoning task dataset.  
+wikifill.pl: It is a wiki clearning script written by Matt Mahoney http://mattmahoney.net/dc/textdata  
 
 ## References    
   [1]Tomas Mikolov, Kai Chen, Greg Corrado, and Jeffrey Dean. Efficient Estimation of Word Representations in Vector Space. In Proceedings of Workshop at ICLR, 2013.>   
