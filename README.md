@@ -10,11 +10,22 @@ make
 ./demo-word.sh
 ```
 
+##WANNA TRAIN ANOTHER CORPUS
+0. Get the PPDB version (>2.0) you want at http://paraphrase.org/#/download  
+0. make and run fuzzypp_word2vec.c with -save-vocab to get the vocabulary file. Without the paraphrase table file it will throw exception, but you can get the vocabulary file.  
+0. Run PPDB.py like the following
+```
+usage: python PPDB.py vocab_file ppdb_file output_file
+example: python PPDB.py vocab.txt ppdb-2.0-tldr ppdb2.txt
+```
+0. Run fuzzypp_word2vec again
+
 ##FILES
-bwrwc_word2vec.c: The implement of the model and method on the basis of the source code of word2vec by Mikolov et al.  
+fuzzypp_word2vec.c: The implement of the model and method on the basis of the source code of word2vec by Mikolov et al.  
   compute-accuracy.c: The script to run the word analogical reasoning task by Mikolov et al.  
   demo-word.sh: The script to run a demo using enwiki9 and PPDB2.0 to learn word embeddings and then run the word analogical reasoning task.  
   PPDB2.txt: It is a paraphrase table extracted from PPDB2.0 for the vocabulary of enwiki9.  
+  PPDB.py: The script preprocesses the vocabulary and PPDB2.0 and outputs the paraphrase table for each word in the vocabulary  
   questions-words.txt: The word analogical reasoning task dataset.  
 wikifill.pl: It is a wiki clearning script written by Matt Mahoney http://mattmahoney.net/dc/textdata  
 
