@@ -13,12 +13,14 @@ make
 ##WANNA TRAIN ANOTHER CORPUS
 0. Get the PPDB version (>2.0) you want at http://paraphrase.org/#/download  
 0. make and run fuzzypp_word2vec.c with -save-vocab to get the vocabulary file. Without the paraphrase table file it will throw exception, but you can get the vocabulary file.  
-0. Run PPDB.py like the following
+0. Run PPDB.py
+0. Run fuzzypp_word2vec again
+
+###HOW TO USE PPDB.py
 ```
 usage: python PPDB.py vocab_file ppdb_file output_file
 example: python PPDB.py vocab.txt ppdb-2.0-tldr ppdb2.txt
 ```
-4. Run fuzzypp_word2vec again
 
 ##FILES
 fuzzypp_word2vec.c: The implement of the model and method on the basis of the source code of word2vec by Mikolov et al.  
