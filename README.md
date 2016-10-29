@@ -4,6 +4,12 @@ The implement of the model and method in our paper "Fuzzy paraphrases in learnin
 The source code is based on the source code of word2vec(https://code.google.com/archive/p/word2vec/)[1,2,3].    
 The sample code use enwiki9 and PPDB2.0[4,5,6] to train the word embeddings..
 
+##HOW TO RUN THE DEMO
+```
+make
+./demo-word.sh
+```
+
 ##FILES
 bwrwc_word2vec.c: The implement of the model and method on the basis of the source code of word2vec by Mikolov et al.  
   compute-accuracy.c: The script to run the word analogical reasoning task by Mikolov et al.  
