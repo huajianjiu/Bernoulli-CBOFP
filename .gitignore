@@ -33,7 +33,7 @@
 *.su
 
 # Corpus files
-*.txt
+ppdb_s_strip.txt
 text8
 text9
 
