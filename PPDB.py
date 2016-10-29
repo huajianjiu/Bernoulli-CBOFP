@@ -54,7 +54,7 @@ class PPDB_2(object):
             self.ppdb_paraphrases[baseword] = [ppword]
 
     def save_ppdb(self):
-        print "Writing to ouput file."
+        print "Writing to ouput file.",
         with open(self.output, "w") as f_save:
             n = 0
             for word in self.words:
@@ -70,7 +70,7 @@ class PPDB_2(object):
                 f_save.write(write_line)
                 n += 1
                 if n%1000 == 0:
-                    sys.stdout.write(".")
+                    print ".",
                     f_save.flush()
 
 
