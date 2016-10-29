@@ -809,7 +809,7 @@ int ArgPos(char *str, int argc, char **argv) {
 int main(int argc, char **argv) {
   int i;
   if (argc == 1) {
-    printf("WORD VECTOR estimation toolkit v 0.1c\n\n");
+    printf("WORD VECTOR estimation toolkit with Fuzzy Paraphrases based on WORD VECTOR estimation toolkit v 0.1c\n\n");
     printf("Options:\n");
     printf("Parameters for training:\n");
     printf("\t-train <file>\n");
@@ -846,13 +846,13 @@ int main(int argc, char **argv) {
     printf("\t-read-vocab <file>\n");
     printf("\t\tThe vocabulary will be read from <file>, not constructed from the training data\n");
     printf("\t-read-paraphrases <file>\n");
-    printf("\t\tThe paraphrases will be read from <file>. Default is 'ppdb_s_strip.txt'\n");
+    printf("\t\tThe paraphrases will be read from <file>. Default is 'ppdb2.txt'\n");
     printf("\t-dropout <int>\n");
     printf("\t\tDropout outputs of lexicon layer according to the ppdb2.0score. default is 1(use 0 for no drop out)\n");
     printf("\t-cbow <int>\n");
     printf("\t\tUse the continuous bag of words model; default is 1 for dropout. Use 0 for skip-gram model, -1 for dropout everthing(use paraphrase layer only to reject negative samples.))\n");
     printf("\nExamples:\n");
-    printf("./word2vec -train data.txt -output vec.txt -size 200 -window 5 -sample 1e-4 -negative 5 -hs 0 -binary 0 -cbow 1 -iter 3\n\n");
+    printf("./fuzzypp_word2vec -train text9 -output vectors_ppdb2.bin -read-paraphrases ppdb2.txt -cbow 1 -size 200 -window 8 -negative 25 -hs 0 -sample 1e-4 -threads 20 -binary 1 -iter 15\n\n");
     return 0;
   }
   output_file[0] = 0;

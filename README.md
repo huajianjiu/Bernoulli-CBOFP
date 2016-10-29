@@ -22,6 +22,12 @@ usage: python PPDB.py vocab_file ppdb_file output_file
 example: python PPDB.py vocab.txt ppdb-2.0-tldr ppdb2.txt
 ```
 
+###HOW TO USE fuzzypp_word2vec
+almost the same with word2vec
+```
+example: ./fuzzypp_word2vec -train text9 -output vectors_ppdb2.bin -read-paraphrases ppdb2.txt -cbow 1 -size 200 -window 8 -negative 25 -hs 0 -sample 1e-4 -threads 20 -binary 1 -iter 15
+```
+
 ##FILES
 fuzzypp_word2vec.c: The implement of the model and method on the basis of the source code of word2vec by Mikolov et al.  
   compute-accuracy.c: The script to run the word analogical reasoning task by Mikolov et al.  

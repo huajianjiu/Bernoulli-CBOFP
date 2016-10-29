@@ -70,7 +70,7 @@ class PPDB_2(object):
                 f_save.write(write_line)
                 n += 1
                 if n%1000 == 0:
-                    print "."
+                    sys.stdout.write(".")
                     f_save.flush()
 
 
