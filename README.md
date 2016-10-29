@@ -1,7 +1,7 @@
 # Learning Word Embedding from a corpus and a lexicon using "Fuzzy Paraphrases"
 
-The implement of the model and method in our paper "Fuzzy paraphrases in learning word representations with a corpus and a lexicon"
-  The source code is based on the source code of word2vec(https://code.google.com/archive/p/word2vec/)[1,2,3].    
+The implement of the model and method in our paper "Fuzzy paraphrases in learning word representations with a corpus and a lexicon"  
+The source code is based on the source code of word2vec(https://code.google.com/archive/p/word2vec/)[1,2,3].    
 The sample code use enwiki9 and PPDB2.0[4,5,6] to train the word embeddings..
 
 ##FILES
