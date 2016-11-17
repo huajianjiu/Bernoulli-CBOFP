@@ -36,6 +36,7 @@ fuzzypp_word2vec.c: The implement of the model and method on the basis of the so
   PPDB.py: The script preprocesses the vocabulary and PPDB2.0 and outputs the paraphrase table for each word in the vocabulary  
   questions-words.txt: The word analogical reasoning task dataset.  
 wikifill.pl: It is a wiki clearning script written by Matt Mahoney http://mattmahoney.net/dc/textdata  
+compute-wordsim.py: A script for word similarity evaluation, outputs spearman correlation.   
 
 ## References    
   [1]Tomas Mikolov, Kai Chen, Greg Corrado, and Jeffrey Dean. Efficient Estimation of Word Representations in Vector Space. In Proceedings of Workshop at ICLR, 2013.>   
