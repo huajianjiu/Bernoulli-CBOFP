@@ -717,7 +717,7 @@ void *TrainModelThread(void *id) {
 
 void TrainModel() {
   long a, b, c, d;
-  FILE *fo;
+  FILE *fo, *fot;
   pthread_attr_t attr;
   int s;
   // int stack_size; 
@@ -743,9 +743,10 @@ void TrainModel() {
     fprintf(fo, "%lld %lld\n", vocab_size, layer1_size);
     for (a = 0; a < vocab_size; a++) {
       fprintf(fo, "%s ", vocab[a].word);
-      if (binary) for (b = 0; b < layer1_size; b++) fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, fo);
-      else for (b = 0; b < layer1_size; b++) fprintf(fo, "%lf ", syn0[a * layer1_size + b]);
+      for (b = 0; b < layer1_size; b++) fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, fo);
+      for (b = 0; b < layer1_size; b++) fprintf(fot, "%lf ", syn0[a * layer1_size + b]);
       fprintf(fo, "\n");
+      fprintf(fot, "\n");
     }
   } else {
     // Run K-means on the word vectors
@@ -823,8 +824,8 @@ int main(int argc, char **argv) {
     printf("\t-sample <float>\n");
     printf("\t\tSet threshold for occurrence of words. Those that appear with higher frequency in the training data\n");
     printf("\t\twill be randomly down-sampled; default is 1e-3, useful range is (0, 1e-5)\n");
-    printf("\t-hs <int>\n");
-    printf("\t\tUse Hierarchical Softmax; default is 0 (not used)\n");
+    // printf("\t-hs <int>\n");
+    // printf("\t\tUse Hierarchical Softmax; default is 0 (not used)\n");
     printf("\t-negative <int>\n");
     printf("\t\tNumber of negative examples; default is 5, common values are 3 - 10 (0 = not used)\n");
     printf("\t-threads <int>\n");
@@ -839,8 +840,8 @@ int main(int argc, char **argv) {
     printf("\t\tOutput word classes rather than word vectors; default number of classes is 0 (vectors are written)\n");
     printf("\t-debug <int>\n");
     printf("\t\tSet the debug mode (default = 2 = more info during training)\n");
-    printf("\t-binary <int>\n");
-    printf("\t\tSave the resulting vectors in binary moded; default is 0 (off)\n");
+    // printf("\t-binary <int>\n");
+    // printf("\t\tSave the resulting vectors in binary moded; default is 0 (off)\n");
     printf("\t-save-vocab <file>\n");
     printf("\t\tThe vocabulary will be saved to <file>\n");
     printf("\t-read-vocab <file>\n");
@@ -848,9 +849,9 @@ int main(int argc, char **argv) {
     printf("\t-read-paraphrases <file>\n");
     printf("\t\tThe paraphrases will be read from <file>. Default is 'ppdb2.txt'\n");
     printf("\t-dropout <int>\n");
-    printf("\t\tDropout outputs of lexicon layer according to the ppdb2.0score. default is 1(use 0 for no drop out)\n");
+    printf("\t\tDropout outputs of lexicon layer according to the ppdb2.0score. default is 1(use 0 for no drop out, -1 for drop everthing and only use pp to reject negative samples)\n");
     printf("\t-cbow <int>\n");
-    printf("\t\tUse the continuous bag of words model; default is 1 for dropout. Use 0 for skip-gram model, -1 for dropout everthing(use paraphrase layer only to reject negative samples.))\n");
+    printf("\t\tUse the continuous bag of words model; default is 1 for cbow. Use 0 for skip-gram model.\n");
     printf("\nExamples:\n");
     printf("./fuzzypp_word2vec -train text9 -output vectors_ppdb2.bin -read-paraphrases ppdb2.txt -cbow 1 -size 200 -window 8 -negative 25 -hs 0 -sample 1e-4 -threads 20 -binary 1 -iter 15\n\n");
     return 0;
@@ -863,7 +864,7 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-save-vocab", argc, argv)) > 0) strcpy(save_vocab_file, argv[i + 1]);
   if ((i = ArgPos((char *)"-read-vocab", argc, argv)) > 0) strcpy(read_vocab_file, argv[i + 1]);
   if ((i = ArgPos((char *)"-debug", argc, argv)) > 0) debug_mode = atoi(argv[i + 1]);
-  if ((i = ArgPos((char *)"-binary", argc, argv)) > 0) binary = atoi(argv[i + 1]);
+  // if ((i = ArgPos((char *)"-binary", argc, argv)) > 0) binary = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-cbow", argc, argv)) > 0) cbow = atoi(argv[i + 1]);
   if (cbow) alpha = 0.05;
   if ((i = ArgPos((char *)"-dropout", argc, argv)) > 0) dropout = atoi(argv[i + 1]);
@@ -871,7 +872,7 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-output", argc, argv)) > 0) strcpy(output_file, argv[i + 1]);
   if ((i = ArgPos((char *)"-window", argc, argv)) > 0) window = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-sample", argc, argv)) > 0) sample = atof(argv[i + 1]);
-  if ((i = ArgPos((char *)"-hs", argc, argv)) > 0) hs = atoi(argv[i + 1]);
+  // if ((i = ArgPos((char *)"-hs", argc, argv)) > 0) hs = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-negative", argc, argv)) > 0) negative = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-threads", argc, argv)) > 0) num_threads = atoi(argv[i + 1]);
   if ((i = ArgPos((char *)"-iter", argc, argv)) > 0) iter = atoi(argv[i + 1]);
