@@ -737,12 +737,14 @@ void TrainModel() {
   start = clock();
   for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, TrainModelThread, (void *)a);
   for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
-  fo = fopen(output_file, "wb");
+  fo = fopen(strcat(output_file, ".bin"), "wb");
+  fot = fopen(strcat(output_file, ".txt"), "wb");
   if (classes == 0) {
     // Save the word vectors
     fprintf(fo, "%lld %lld\n", vocab_size, layer1_size);
     for (a = 0; a < vocab_size; a++) {
       fprintf(fo, "%s ", vocab[a].word);
+      fprintf(fot, "%s ", vocab[a].word);
       for (b = 0; b < layer1_size; b++) fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, fo);
       for (b = 0; b < layer1_size; b++) fprintf(fot, "%lf ", syn0[a * layer1_size + b]);
       fprintf(fo, "\n");
