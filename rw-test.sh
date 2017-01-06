@@ -28,7 +28,7 @@ mkdir -p "${RESULTDIR}"
 for i in `seq 100 50 800`
 do
 	echo size=${i};
-	python compute-wordsim.py "${VECTORDIR}"/t9_s${i}w8ns25.bin.txt rw.csv > "${RESULTDIR}"/cbow_t9_s${i}w8ns25.txt;
+	python compute-wordsim.py "${VECTORDIR}"/t9_s${i}w8ns25_cbow.bin.txt rw.csv > "${RESULTDIR}"/cbow_t9_s${i}w8ns25.txt;
 done
 
 VECTORDIR=/media/ke/Data/Experiment_Vectors_Results_Dec25-Jan/fastText/fastText/tuning_vectors
