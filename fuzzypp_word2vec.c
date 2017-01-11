@@ -882,6 +882,7 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-classes", argc, argv)) > 0) classes = atoi(argv[i + 1]);
 
   if ((i = ArgPos((char *)"-read-paraphrases", argc, argv)) > 0) {
+    printf("Read External Paraphrases\n")
     strcpy(ppdb_file, argv[i + 1]);
   } else {
     strcpy(ppdb_file, "ppdb2.txt");
