@@ -722,7 +722,7 @@ void *TrainModelThread(void *id) {
 
 void TrainModel() {
   long a, b, c, d;
-  FILE *fo, *fot;
+  FILE *fo, *fot, *fpp, *fppscore;
   pthread_attr_t attr;
   int s;
   // int stack_size; 
@@ -744,6 +744,8 @@ void TrainModel() {
   for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
   fo = fopen(strcat(output_file, ".bin"), "wb");
   fot = fopen(strcat(output_file, ".txt"), "wb");
+  fpp = fopen("paraphrase_table.txt", "wb");
+  fppscore = fopen("paraphrase_score_table.txt", "wb");
   if (classes == 0) {
     // Save the word vectors
     fprintf(fo, "%lld %lld\n", vocab_size, layer1_size);
@@ -754,6 +756,15 @@ void TrainModel() {
       for (b = 0; b < layer1_size; b++) fprintf(fot, "%lf ", syn0[a * layer1_size + b]);
       fprintf(fo, "\n");
       fprintf(fot, "\n");
+    }
+    // save pp tables
+    for (a=0; a < vocab_size; a++) {
+      for (b=0; b < PPDB_TABLE_SIZE;b++) {
+        fprintf(fpp, "%d ", paraphrases[a*PPDB_TABLE_SIZE+b]);
+        fprintf(fppscore, "%lf ", paraphrase_scores[a*PPDB_TABLE_SIZE+b]);
+        fprintf(fpp, "\n");
+        fprintf(fppscore, "\n");
+      }
     }
   } else {
     // Run K-means on the word vectors
