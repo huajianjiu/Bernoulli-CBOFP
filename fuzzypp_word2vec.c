@@ -762,9 +762,9 @@ void TrainModel() {
       for (b=0; b < PPDB_TABLE_SIZE;b++) {
         fprintf(fpp, "%d ", paraphrases[a*PPDB_TABLE_SIZE+b]);
         fprintf(fppscore, "%lf ", paraphrase_scores[a*PPDB_TABLE_SIZE+b]);
-        fprintf(fpp, "\n");
-        fprintf(fppscore, "\n");
       }
+      fprintf(fpp, "\n");
+      fprintf(fppscore, "\n");
     }
   } else {
     // Run K-means on the word vectors
