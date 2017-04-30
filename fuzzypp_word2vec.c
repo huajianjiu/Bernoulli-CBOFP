@@ -598,13 +598,19 @@ void *TrainModelThread(void *id) {
           else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha;
           for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1neg[c + l2];
           for (c = 0; c < layer1_size; c++) syn1neg[c + l2] += g * neu1[c];
-          if (label == 0){
-              sum_loss += (float )g;
-              loss_count++;
-          } else {
-              sum_loss += ((float )1-g);
-              loss_count++;
+          // we want to compare the corpus model loss. the true samples only.
+          if (d == 0){
+            sum_loss += ((float )1-g);
+            loss_count++;
           }
+//          if (label == 1){
+//              sum_loss += ((float )1-g);
+//              loss_count++;
+//          }
+//          else {
+//              sum_loss += (float )g;
+//              loss_count++;
+//          }
         }
         // hidden -> in
         for (a = b; a < window * 2 + 1 - b; a++) if (a != window) {
