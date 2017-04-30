@@ -596,12 +596,12 @@ void *TrainModelThread(void *id) {
         }
         // hidden -> in
         for (a = b; a < window * 2 + 1 - b; a++) if (a != window) {
-          c = sentence_position - window + a;
-          if (c < 0) continue;
-          if (c >= sentence_length) continue;
-          last_word = sen[c];
-          if (last_word == -1) continue;
-          for (c = 0; c < layer1_size; c++) syn0[c + last_word * layer1_size] += neu1e[c];
+                c = sentence_position - window + a;
+                if (c < 0) continue;
+                if (c >= sentence_length) continue;
+                last_word = sen[c];
+                if (last_word == -1) continue;
+                for (c = 0; c < layer1_size; c++) syn0[c + last_word * layer1_size] += neu1e[c];
         }
       }
     } else {  //train skip-gram
@@ -720,6 +720,120 @@ void *TrainModelThread(void *id) {
   pthread_exit(NULL);
 }
 
+void *TestModelThread(void *id) {
+    long long a, b, d, cw, word, last_word, sentence_length = 0, sentence_position = 0;
+    long long word_count = 0, last_word_count = 0, sen[MAX_SENTENCE_LENGTH + 1];
+    long long l1, l2, c, target, label, local_iter = 1;
+    unsigned long long next_random = (long long)id;
+    real f, g;
+    clock_t now;
+    real *neu1 = (real *)calloc(layer1_size, sizeof(real));
+    real *neu1e = (real *)calloc(layer1_size, sizeof(real));
+    FILE *fi = fopen(train_file, "rb");
+    float sum_loss = 0;
+    long long loss_count = 0;
+
+    fseek(fi, file_size / (long long)num_threads * (long long)id, SEEK_SET);
+    while (1) {
+        if (word_count - last_word_count > 10000) {
+            word_count_actual += word_count - last_word_count;
+            last_word_count = word_count;
+            if ((debug_mode > 1)) {
+                now=clock();
+                printf("%cAlpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ", 13, alpha,
+                       word_count_actual / (real)(1 * train_words + 1) * 100,
+                       word_count_actual / ((real)(now - start + 1) / (real)CLOCKS_PER_SEC * 1000));
+                fflush(stdout);
+            }
+            alpha = starting_alpha * (1 - word_count_actual / (real)(1 * train_words + 1));
+            if (alpha < starting_alpha * 0.0001) alpha = starting_alpha * 0.0001;
+        }
+        if (sentence_length == 0) {
+            while (1) {
+                word = ReadWordIndex(fi);
+                if (feof(fi)) break;
+                if (word == -1) continue;
+                word_count++;
+                if (word == 0) break;
+                // The subsampling randomly discards frequent words while keeping the ranking same
+                if (sample > 0) {
+                    real ran = (sqrt(vocab[word].cn / (sample * train_words)) + 1) * (sample * train_words) / vocab[word].cn;
+                    next_random = next_random * (unsigned long long)25214903917 + 11;
+                    if (ran < (next_random & 0xFFFF) / (real)65536) continue;
+                }
+                sen[sentence_length] = word;
+                sentence_length++;
+                if (sentence_length >= MAX_SENTENCE_LENGTH) break;
+            }
+            sentence_position = 0;
+        }
+        if (feof(fi) || (word_count > train_words / num_threads)) {
+            word_count_actual += word_count - last_word_count;
+            local_iter--;
+            if (local_iter == 0) break;
+            word_count = 0;
+            last_word_count = 0;
+            sentence_length = 0;
+            fseek(fi, file_size / (long long)num_threads * (long long)id, SEEK_SET);
+            continue;
+        }
+        word = sen[sentence_position];
+        if (word == -1) continue;
+        for (c = 0; c < layer1_size; c++) neu1[c] = 0;
+        for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
+        next_random = next_random * (unsigned long long)25214903917 + 11;
+        b = next_random % window;
+        if (cbow) {  //train the cbow architecture
+            // in -> hidden
+            cw = 0;
+            for (a = b; a < window * 2 + 1 - b; a++) if (a != window) {
+                    c = sentence_position - window + a;
+                    if (c < 0) continue;
+                    if (c >= sentence_length) continue;
+                    last_word = sen[c];
+                    if (last_word == -1) continue;
+                    for (c = 0; c < layer1_size; c++) neu1[c] += syn0[c + last_word * layer1_size];
+                    cw++;
+                }
+            if (cw) {
+                for (c = 0; c < layer1_size; c++) neu1[c] /= cw;
+                // NEGATIVE SAMPLING
+                if (negative > 0) for (d = 0; d < negative + 1; d++) {
+                        if (d == 0) {
+                            target = word;
+                            label = 1;
+                        } else {
+                            next_random = next_random * (unsigned long long)25214903917 + 11;
+                            target = table[(next_random >> 16) % table_size];
+                            if (target == 0) target = next_random % (vocab_size - 1) + 1;
+                            if (target == word) continue;
+                            label = 0;
+                        }
+                        l2 = target * layer1_size;
+                        f = 0;
+                        for (c = 0; c < layer1_size; c++) f += neu1[c] * syn1neg[c + l2];
+                        if (f > MAX_EXP) g = (label - 1) * alpha;
+                        else if (f < -MAX_EXP) g = (label - 0) * alpha;
+                        else g = (label - expTable[(int)((f + MAX_EXP) * (EXP_TABLE_SIZE / MAX_EXP / 2))]) * alpha;
+                        if (label == 1) sum_loss += 1-g;
+                        else if (label == 0) sum_loss += g;
+                        loss_count++;
+                    }
+            }
+        }
+        sentence_position++;
+        if (sentence_position >= sentence_length) {
+            sentence_length = 0;
+            continue;
+        }
+    }
+    printf("loss: %f\n", (sum_loss/(float)loss_count));
+    fclose(fi);
+    free(neu1);
+    free(neu1e);
+    pthread_exit(NULL);
+}
+
 void TrainModel() {
   long a, b, c, d;
   FILE *fo, *fot, *fpp, *fppscore;
@@ -742,75 +856,35 @@ void TrainModel() {
   start = clock();
   for (a = 0; a < num_threads; a++) pthread_create(&pt[a], NULL, TrainModelThread, (void *)a);
   for (a = 0; a < num_threads; a++) pthread_join(pt[a], NULL);
+  for (a = 0; a < 1; a++) pthread_create(&pt[a], NULL, TestModelThread, (void *)a);
+  for (a = 0; a < 1; a++) pthread_join(pt[a], NULL);
   fo = fopen(strcat(output_file, ".bin"), "wb");
   fot = fopen(strcat(output_file, ".txt"), "wb");
   fpp = fopen("paraphrase_table.txt", "wb");
   fppscore = fopen("paraphrase_score_table.txt", "wb");
   if (classes == 0) {
-    // Save the word vectors
-    fprintf(fo, "%lld %lld\n", vocab_size, layer1_size);
-    for (a = 0; a < vocab_size; a++) {
-      fprintf(fo, "%s ", vocab[a].word);
-      fprintf(fot, "%s ", vocab[a].word);
-      for (b = 0; b < layer1_size; b++) fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, fo);
-      for (b = 0; b < layer1_size; b++) fprintf(fot, "%lf ", syn0[a * layer1_size + b]);
-      fprintf(fo, "\n");
-      fprintf(fot, "\n");
-    }
-    // save pp tables
-    for (a=0; a < vocab_size; a++) {
-      for (b=0; b < PPDB_TABLE_SIZE;b++) {
-        fprintf(fpp, "%d ", paraphrases[a*PPDB_TABLE_SIZE+b]);
-        fprintf(fppscore, "%lf ", paraphrase_scores[a*PPDB_TABLE_SIZE+b]);
+      // Save the word vectors
+      fprintf(fo, "%lld %lld\n", vocab_size, layer1_size);
+      for (a = 0; a < vocab_size; a++) {
+          fprintf(fo, "%s ", vocab[a].word);
+          fprintf(fot, "%s ", vocab[a].word);
+          for (b = 0; b < layer1_size; b++) fwrite(&syn0[a * layer1_size + b], sizeof(real), 1, fo);
+          for (b = 0; b < layer1_size; b++) fprintf(fot, "%lf ", syn0[a * layer1_size + b]);
+          fprintf(fo, "\n");
+          fprintf(fot, "\n");
       }
-      fprintf(fpp, "\n");
-      fprintf(fppscore, "\n");
-    }
-  } else {
-    // Run K-means on the word vectors
-    int clcn = classes, iter = 10, closeid;
-    int *centcn = (int *)malloc(classes * sizeof(int));
-    int *cl = (int *)calloc(vocab_size, sizeof(int));
-    real closev, x;
-    real *cent = (real *)calloc(classes * layer1_size, sizeof(real));
-    for (a = 0; a < vocab_size; a++) cl[a] = a % clcn;
-    for (a = 0; a < iter; a++) {
-      for (b = 0; b < clcn * layer1_size; b++) cent[b] = 0;
-      for (b = 0; b < clcn; b++) centcn[b] = 1;
-      for (c = 0; c < vocab_size; c++) {
-        for (d = 0; d < layer1_size; d++) cent[layer1_size * cl[c] + d] += syn0[c * layer1_size + d];
-        centcn[cl[c]]++;
-      }
-      for (b = 0; b < clcn; b++) {
-        closev = 0;
-        for (c = 0; c < layer1_size; c++) {
-          cent[layer1_size * b + c] /= centcn[b];
-          closev += cent[layer1_size * b + c] * cent[layer1_size * b + c];
-        }
-        closev = sqrt(closev);
-        for (c = 0; c < layer1_size; c++) cent[layer1_size * b + c] /= closev;
-      }
-      for (c = 0; c < vocab_size; c++) {
-        closev = -10;
-        closeid = 0;
-        for (d = 0; d < clcn; d++) {
-          x = 0;
-          for (b = 0; b < layer1_size; b++) x += cent[layer1_size * d + b] * syn0[c * layer1_size + b];
-          if (x > closev) {
-            closev = x;
-            closeid = d;
+      // save pp tables
+      for (a=0; a < vocab_size; a++) {
+          for (b=0; b < PPDB_TABLE_SIZE;b++) {
+              fprintf(fpp, "%d ", paraphrases[a*PPDB_TABLE_SIZE+b]);
+              fprintf(fppscore, "%lf ", paraphrase_scores[a*PPDB_TABLE_SIZE+b]);
           }
-        }
-        cl[c] = closeid;
+          fprintf(fpp, "\n");
+          fprintf(fppscore, "\n");
       }
-    }
-    // Save the K-means classes
-    for (a = 0; a < vocab_size; a++) fprintf(fo, "%s %d\n", vocab[a].word, cl[a]);
-    free(centcn);
-    free(cent);
-    free(cl);
   }
   fclose(fo);
+  fclose(fot);
 }
 
 int ArgPos(char *str, int argc, char **argv) {
